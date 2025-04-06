@@ -1,5 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">SendMe</string>
     <string name="phone_number">Phone Number</string>
     <string name="login_register">Login/Register</string>
     <string name="username">Username</string>
@@ -12,4 +12,7 @@
     <string name="dialog_button_verify">Verify</string>
     <string name="dialog_button_cancel">Cancel</string>
     <string name="error_empty_code">The verification code cannot be empty</string>
-    <string name="error_not_authenticated">You are not authenticated. Please log in.</string></resources>
+    <string name="error_not_authenticated">You are not authenticated. Please log in.</string>
+
+
+</resources>

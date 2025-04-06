@@ -1,26 +1,49 @@
 package com.example.sendme.data.model;
 
 public class User {
-    private String uid;
-    private String email;
+    private String phone;
     private String username;
-    private String phoneNumber;
-    private String profileImageUrl;
+    private String status;
+    private String imageUrl;
 
     public User() {}
 
-    public User(String uid, String email, String username, String phoneNumber, String profileImageUrl) {
-        this.uid = uid;
-        this.email = email;
+    public User(String phone, String username, String status, String imageUrl) {
+        this.phone = phone;
         this.username = username;
-        this.phoneNumber = phoneNumber;
-        this.profileImageUrl = profileImageUrl;
+        this.status = status;
+        this.imageUrl = imageUrl;
     }
 
-    // Getters y Setters
-    public String getUid() { return uid; }
-    public String getEmail() { return email; }
-    public String getUsername() { return username; }
-    public String getPhoneNumber() { return phoneNumber; }
-    public String getProfileImageUrl() { return profileImageUrl; }
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 }

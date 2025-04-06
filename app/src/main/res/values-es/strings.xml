@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phone_number">Numero de telefono</string>
+    <string name="login_register">Iniciar Sesion/Registro</string>
+    <string name="username">Nombre de usuario</string>
+    <string name="status">Estado</string>
+    <string name="save">Guardar</string>
+    <string name="error_phone_empty">El numero de telefono es obligatorio</string>
+    <string name="error_username_empty">El nombre de usuario es obligatorio</string>
+    <string name="status_msg">Hola, estoy usando SendMe</string>
+    <string name="dialog_title_enter_code">Introduce el código de verificación</string>
+    <string name="dialog_button_verify">Verificar</string>
+    <string name="dialog_button_cancel">Cancelar</string>
+    <string name="error_empty_code">El código de verificación no puede estar vacío</string>
+    <string name="error_not_authenticated">No estás autenticado. Por favor, inicia sesión.</string>
+
+</resources>
