@@ -37,7 +37,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
         // Verificar si hay un usuario autenticado
         if (FirebaseManager.getInstance().getAuth().getCurrentUser() == null) {
             new AlertDialog.Builder(this)
-                    .setMessage("No estás autenticado. Por favor, inicia sesión.")
+                    .setMessage(getString(R.string.error_not_authenticated))
                     .setPositiveButton(android.R.string.ok, (dialog, which) -> {
                         startActivity(new Intent(this, AuthActivity.class));
                         finish();
