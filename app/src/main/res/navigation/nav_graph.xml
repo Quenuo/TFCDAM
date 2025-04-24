@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/chatListFragment"
+    >
+
+    <fragment
+        android:id="@+id/chatListFragment"
+        android:name="com.example.sendme.view.ChatListFragment"
+        android:label="ChatListFragment" >
+        <action
+            android:id="@+id/action_chatListFragment_to_newChatFragment"
+            app:destination="@id/newChatFragment" />
+        <action
+            android:id="@+id/action_chatListFragment_to_settingsFragment"
+            app:destination="@id/settingsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/newChatFragment"
+        android:name="com.example.sendme.view.NewChatFragment"
+        android:label="NewChatFragment" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.sendme.view.SettingsFragment"
+        android:label="SettingsFragment" />
+
+</navigation>

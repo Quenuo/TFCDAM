@@ -13,5 +13,9 @@
     <string name="dialog_button_cancel">Cancelar</string>
     <string name="error_empty_code">El código de verificación no puede estar vacío</string>
     <string name="error_not_authenticated">No estás autenticado. Por favor, inicia sesión.</string>
+    <string name="search_hint">Buscar chats</string>
+    <string name="new_chat">Añadir nuevo chat </string>
+    <string name="seleccionar_contacto">Select contact</string>
+    <string name="ajustes">Ajustes</string>
 
 </resources>

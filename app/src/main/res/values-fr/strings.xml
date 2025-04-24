@@ -13,4 +13,11 @@
     <string name="dialog_button_cancel">Annuler</string>
     <string name="error_empty_code">Le code de vérification ne peut pas être vide</string>
     <string name="error_not_authenticated">Vous n\'êtes pas authentifié. Veuillez vous connecter.</string>
+    <string name="search_hint">Rechercher des discussions</string>
+    <string name="new_chat">Ajouter une nouvelle discussion </string>
+    <string name="seleccionar_contacto">Sélectionnez un contact</string>
+    <string name="ajustes">Paramètres</string>
+
+
+
 </resources>

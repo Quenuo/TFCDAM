@@ -12,4 +12,9 @@
     <string name="dialog_button_verify">Verify</string>
     <string name="dialog_button_cancel">Cancel</string>
     <string name="error_empty_code">The verification code cannot be empty</string>
-    <string name="error_not_authenticated">You are not authenticated. Please log in.</string></resources>
+    <string name="error_not_authenticated">You are not authenticated. Please log in.</string>
+    <string name="search_hint">Search chats</string>
+    <string name="new_chat">New chat </string>
+    <string name="seleccionar_contacto">Select contact</string>
+    <string name="ajustes">Settings</string>
+</resources>
