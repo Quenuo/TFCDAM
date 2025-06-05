@@ -2,29 +2,102 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/chatListFragment"
-    >
+    app:startDestination="@id/chatListFragment">
 
     <fragment
         android:id="@+id/chatListFragment"
-        android:name="com.example.sendme.view.ChatListFragment"
-        android:label="ChatListFragment" >
+        android:name="com.example.sendme.view.ChatListFragment">
         <action
             android:id="@+id/action_chatListFragment_to_newChatFragment"
-            app:destination="@id/newChatFragment" />
+            app:destination="@id/newChatFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out"
+            app:popEnterAnim="@android:anim/fade_in"
+            app:popExitAnim="@android:anim/fade_out" />
         <action
-            android:id="@+id/action_chatListFragment_to_settingsFragment"
-            app:destination="@id/settingsFragment" />
+            android:id="@+id/action_chatListFragment_to_chatFragment"
+            app:destination="@id/chatFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out"
+            app:popEnterAnim="@android:anim/fade_in"
+            app:popExitAnim="@android:anim/fade_out">
+            <argument
+                android:name="user"
+                app:argType="com.example.sendme.data.model.User"
+                android:defaultValue="@null" />
+            <argument
+                android:name="chatId"
+                app:argType="string"
+                android:defaultValue="@null" />
+        </action>
+
+        <action
+            android:id="@+id/action_chatListFragment_to_editProfileFragment"
+            app:destination="@id/editProfileFragment" />
+
     </fragment>
 
     <fragment
         android:id="@+id/newChatFragment"
-        android:name="com.example.sendme.view.NewChatFragment"
-        android:label="NewChatFragment" />
+        android:name="com.example.sendme.view.NewChatFragment">
+        <action
+            android:id="@+id/action_newChatFragment_to_chatFragment"
+            app:destination="@id/chatFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out"
+            app:popEnterAnim="@android:anim/fade_in"
+            app:popExitAnim="@android:anim/fade_out">
+            <argument
+                android:name="user"
+                app:argType="com.example.sendme.data.model.User"
+                android:defaultValue="@null" />
+            <argument
+                android:name="chatId"
+                app:argType="string"
+                android:defaultValue="@null" />
+        </action>
+        <action
+            android:id="@+id/action_newChatFragment_to_chatListFragment"
+            app:destination="@id/chatListFragment" />
+    </fragment>
+
+    <!-- Fragmento de Chat -->
+    <fragment
+        android:id="@+id/chatFragment"
+        android:name="com.example.sendme.view.ChatFragment">
+        <action
+            android:id="@+id/action_chatFragment_to_chatListFragment"
+            app:destination="@id/chatListFragment" />
+        <action
+            android:id="@+id/action_chatFragment_to_userDetailFragment"
+            app:destination="@id/userDetailFragment" />
+        <action
+            android:id="@+id/action_chatFragment_to_imageViewerFragment"
+            app:destination="@id/imageViewerFragment" />
+    </fragment>
 
     <fragment
-        android:id="@+id/settingsFragment"
-        android:name="com.example.sendme.view.SettingsFragment"
-        android:label="SettingsFragment" />
+        android:id="@+id/userDetailFragment"
+        android:name="com.example.sendme.view.UserDetailFragment"
+
+        />
+
+    <!-- Fragmento de Edición de Perfil -->
+    <fragment
+        android:id="@+id/editProfileFragment"
+        android:name="com.example.sendme.view.EditProfileFragment">
+        <action
+            android:id="@+id/action_editProfileFragment_to_chatListFragment"
+            app:destination="@id/chatListFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/imageViewerFragment"
+        android:name="com.example.sendme.view.ImageViewFragment"
+        android:label="ImageViewerFragment">
+        <argument
+            android:name="imageUrl"
+            app:argType="string" />
+    </fragment>
 
 </navigation>

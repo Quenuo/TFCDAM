@@ -2,4 +2,31 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="colorBackground">#121212</color>
+    <color name="colorPrimaryDark">#0A0A0A</color>
+    <color name="pink_accent">#FF4081</color>
+    <color name="drawer_background_dark">#2C2C2C</color>
+    <color name="pink_light">#FFD1DC</color>
+    <color name="pink_medium">#FFB6C1</color>
+    <color name="pink_dark">#FF69B4</color>
+    <color name="pink_vibrant_start">#F48FB1</color>
+    <color name="pink_vibrant_center">#F06292</color>
+    <color name="pink_vibrant_end">#EC407A</color>
+    <color name="text_color_primary_light">#FFFFFF</color>
+    <color name="text_color_secondary_light">#E0E0E0</color>
+    <color name="card_background_translucent">#40FFFFFF</color>
+    <color name="button_color_accent">@color/pink_dark</color>
+    <color name="image_border_color">@color/pink_light</color>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="background_light">#F0F2F5</color>
+    <color name="surface_color">#FFFFFF</color>
+    <color name="text_color_primary">#212121</color>
+    <color name="text_color_secondary">#757575</color>
+    <color name="button_cancel_red">#F44336</color>
+
+
 </resources>

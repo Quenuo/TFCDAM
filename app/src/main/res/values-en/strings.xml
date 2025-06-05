@@ -15,8 +15,39 @@
     <string name="error_not_authenticated">You are not authenticated. Please log in.</string>
     <string name="search_hint">Search chats</string>
     <string name="new_chat">Add new chat </string>
-    <string name="seleccionar_contacto">Seleccionar contacto</string>
+    <string name="seleccionar_contacto">Select contact</string>
     <string name="ajustes">Settings</string>
-
-
+    <string name="escribe_un_mensaje">Write a message..</string>
+    <string name="message_image">Image</string>
+    <string name="close_image_viewer">Close image viewer</string>
+    <string name="icon_app">Logo</string>
+    <string name="editar_perfil">Edit profile</string>
+    <string name="log_out">Log out</string>
+    <string name="username_placeholder">User name\n</string>
+    <string name="no_chats_message">You don\'t have any active conversations.</string>
+    <string name="create_new_chat_prompt">Press the \'+\' button to create a new one.</string>
+    <string name="no_chats_image_description">Illustration indicating that there are no conversations.</string>
+    <string name="profile_image">Profile picture</string>
+    <string name="last_message">This is the last message sent or received in the conversation.</string>
+    <string name="search_icon_description">Search conversation</string>
+    <string name="menu_icon_description">More conversation options</string>
+    <string name="emoji_icon_description">Open emoji picker</string>
+    <string name="attach_icon_description">Attach file</string>
+    <string name="send_icon">Send message</string>
+    <string name="voice_icon_description">Send voice message</string>
+    <string name="cambiar_foto">CHANGE PHOTO</string>
+    <string name="cancelar">CANCEL</string>
+    <string name="guardar">SAVE</string>
+    <string name="toast_permission_denied_permanently">Permission permanently denied. Enable in Settings</string>
+    <string name="toast_permission_denied">Permission denied. Required to access the gallery</string>
+    <string name="toast_no_image_selected">No image selected</string>
+    <string name="toast_image_uploaded_success">Image uploaded successfully</string>
+    <string name="toast_profile_updated">Profile updated successfully</string>
+    <string name="toast_update_error">Error saving changes: %1$s</string>
+    <string name="toast_username_empty">Username cannot be empty</string>
+    <string name="toast_not_authenticated">Error: User not authenticated</string>
+    <string name="toast_user_not_found">Error: User not found</string>
+    <string name="toast_profile_load_error">Error uploading profile: %1$s</string>
+    <string name="toast_image_load_error">Error uploading image: %1$s</string>
+    <string name="error_chat_not_initialized">Internal error: chat is not initialized.</string>
 </resources>

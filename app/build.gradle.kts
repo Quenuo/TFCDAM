@@ -51,6 +51,10 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
+    implementation(libs.glide)
+    implementation(libs.okhttp)
+    implementation(libs.gson)
+    implementation(libs.activity)
 
 
 

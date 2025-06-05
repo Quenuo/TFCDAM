@@ -15,7 +15,42 @@
     <string name="error_not_authenticated">No estás autenticado. Por favor, inicia sesión.</string>
     <string name="search_hint">Buscar chats</string>
     <string name="new_chat">Añadir nuevo chat </string>
-    <string name="seleccionar_contacto">Select contact</string>
+    <string name="seleccionar_contacto">Seleccionar contacto</string>
     <string name="ajustes">Ajustes</string>
+    <string name="escribe_un_mensaje">Escribe un mensaje…</string>
+    <string name="message_image">Imagen \n</string>
+    <string name="close_image_viewer">Cerrar visor de imágenes</string>
+    <string name="icon_app">Logo</string>
+    <string name="editar_perfil">Editar perfil</string>
+    <string name="log_out">Cerrar sesión</string>
+    <string name="username_placeholder">User name\n</string>
+    <string name="no_chats_message">No tienes ninguna conversación activa.</string>
+    <string name="create_new_chat_prompt">Toca el botón de \'+\' para crear una nueva.</string>
+    <string name="no_chats_image_description">Ilustración que indica que no hay conversaciones.</string>
+    <string name="profile_image">Imagen de perfil</string>
+    <string name="last_message">Este es el último mensaje enviado o recibido en la conversación.</string>
+    <string name="search_icon_description">Buscar en la conversación</string>
+    <string name="menu_icon_description">Más opciones de conversación</string>
+    <string name="emoji_icon_description">Abrir selector de emojis</string>
+    <string name="attach_icon_description">Adjuntar archivo</string>
+    <string name="send_icon">Enviar mensaje</string>
+    <string name="voice_icon_description">Enviar mensaje de voz</string>
+    <string name="cambiar_foto">CAMBIAR FOTO</string>
+    <string name="cancelar">CANCELAR</string>
+    <string name="guardar">GUARDAR</string>
+    <string name="toast_permission_denied_permanently">Permiso denegado permanentemente. Habilitar en Configuración</string>
+    <string name="toast_permission_denied">Permiso denegado. Necesario para acceder a la galería</string>
+    <string name="toast_no_image_selected">No se seleccionó ninguna imagen</string>
+    <string name="toast_image_uploaded_success">Imagen subida con éxito</string>
+    <string name="toast_profile_updated">Perfil actualizado correctamente</string>
+    <string name="toast_update_error">Error al guardar los cambios: %1$s</string>
+    <string name="toast_username_empty">El nombre de usuario no puede estar vacío</string>
+    <string name="toast_not_authenticated">Error: usuario no autenticado</string>
+    <string name="toast_user_not_found">Error: usuario no encontrado</string>
+    <string name="toast_profile_load_error">Error al cargar el perfil: %1$s</string>
+    <string name="toast_image_load_error">Error al cargar la imagen: %1$s</string>
+    <string name="error_chat_not_initialized">Error interno: el chat no está inicializado.</string>
+
+
 
 </resources>

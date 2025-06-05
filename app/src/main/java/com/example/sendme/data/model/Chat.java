@@ -1,24 +1,39 @@
 package com.example.sendme.data.model;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
+// Esta clase representa un chat entre varios usuarios
 public class Chat {
+    // Identificador único del chat
     private String id;
-    private List<String> participants;
-    private String lastMessage;
-    private long lastMessageTimestamp;
-    private Map<String, Integer> unreadCount;
 
+    // Participantes del chat. La clave es el ID del usuario, y el valor es un booleano
+    // que podría representar si está activo, o simplemente marcar su presencia
+    private Map<String, Boolean> participants = new HashMap<>();
+
+    // Último mensaje enviado en el chat
+    private String lastMessage;
+
+    // Momento en el que se envió el último mensaje (en formato timestamp)
+    private long lastMessageTimestamp;
+
+    // Mapa para llevar la cuenta de mensajes no leídos por usuario
+    private Map<String, Integer> unreadCount = new HashMap<>();
+
+    // Constructor vacío necesario para algunas operaciones como deserialización
     public Chat() {}
 
-    public Chat(String id, List<String> participants, String lastMessage, long lastMessageTimestamp, Map<String, Integer> unreadCount) {
+    // Constructor con todos los campos, útil para instanciar un chat ya con datos
+    public Chat(String id, Map<String, Boolean> participants, String lastMessage, long lastMessageTimestamp, Map<String, Integer> unreadCount) {
         this.id = id;
         this.participants = participants;
         this.lastMessage = lastMessage;
         this.lastMessageTimestamp = lastMessageTimestamp;
         this.unreadCount = unreadCount;
     }
+
+    // Getters y setters clásicos
 
     public String getId() {
         return id;
@@ -28,11 +43,11 @@ public class Chat {
         this.id = id;
     }
 
-    public List<String> getParticipants() {
+    public Map<String, Boolean> getParticipants() {
         return participants;
     }
 
-    public void setParticipants(List<String> participants) {
+    public void setParticipants(Map<String, Boolean> participants) {
         this.participants = participants;
     }
 

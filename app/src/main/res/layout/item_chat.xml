@@ -1,56 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:padding="8dp"
-    >
-    <!-- Foto de perfil -->
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp"
+    android:background="?android:attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
     <ImageView
         android:id="@+id/profileImage"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:src="@drawable/default_profile"
+        android:contentDescription="@string/profile_image"
+        android:scaleType="centerCrop"
+        android:padding="2dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
-    <!-- Nombre de usuario -->
     <TextView
         android:id="@+id/usernameText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:textSize="16sp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="8dp"
+        android:textSize="17sp"
         android:textStyle="bold"
+        android:textColor="@android:color/white"
+        android:maxLines="1"
+        android:ellipsize="end"
         app:layout_constraintEnd_toStartOf="@id/unreadCount"
         app:layout_constraintStart_toEndOf="@id/profileImage"
-        app:layout_constraintTop_toTopOf="@id/profileImage" />
-
-    <!-- Último mensaje -->
+        app:layout_constraintTop_toTopOf="@id/profileImage"
+        />
     <TextView
         android:id="@+id/lastMessageText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="8dp"
         android:ellipsize="end"
         android:maxLines="1"
         android:textSize="14sp"
+        android:textColor="#B3FFFFFF"
         app:layout_constraintEnd_toStartOf="@id/unreadCount"
         app:layout_constraintStart_toEndOf="@id/profileImage"
-        app:layout_constraintTop_toBottomOf="@id/usernameText" />
+        app:layout_constraintTop_toBottomOf="@id/usernameText"
+        tools:text="@string/last_message" />
 
-    <!-- Contador de mensajes no leídos -->
     <TextView
         android:id="@+id/unreadCount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/unread_count_background"
         android:gravity="center"
-        android:minWidth="24dp"
-        android:padding="4dp"
+        android:minWidth="22dp"
+        android:minHeight="22dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
         android:textColor="@android:color/white"
         android:textSize="12sp"
+        android:textStyle="bold"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/profileImage" />
-
+        app:layout_constraintTop_toTopOf="@id/usernameText"
+        tools:text="99+"
+        tools:visibility="visible" />
+    <TextView
+        android:id="@+id/timestampText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="#80FFFFFF"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="2dp"
+        tools:text="14:30" />
 </androidx.constraintlayout.widget.ConstraintLayout>

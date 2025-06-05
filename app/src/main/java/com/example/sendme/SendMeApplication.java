@@ -4,13 +4,18 @@ import android.app.Application;
 
 import com.google.firebase.database.FirebaseDatabase;
 
-//Creo esta clase que extienda Application para inicializar la persistencia de Realtime Database al arrancar la aplicación
+/**
+ * Clase principal de la aplicación que se ejecuta al iniciar la aplicación.
+ * Utilizada para configuraciones globales, como habilitar la persistencia de Firebase Realtime Database.
+ */
 public class SendMeApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        // Habilitar persistencia de Realtime Database
+        // Habilitar la persistencia offline de Firebase Realtime Database.
+        // Esto permite que la aplicación funcione sin conexión a internet y sincronice los datos
+        // cuando la conexión se restablezca. Se debe llamar una única vez antes de cualquier otra
+        // operación de Realtime Database.
         FirebaseDatabase.getInstance().setPersistenceEnabled(true);
     }
-
 }

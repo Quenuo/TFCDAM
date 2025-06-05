@@ -17,7 +17,37 @@
     <string name="new_chat">Ajouter une nouvelle discussion </string>
     <string name="seleccionar_contacto">Sélectionnez un contact</string>
     <string name="ajustes">Paramètres</string>
-
-
-
+    <string name="escribe_un_mensaje">Écrire un message..</string>
+    <string name="message_image">Image</string>
+    <string name="close_image_viewer">Fermer la visionneuse d\'images</string>
+    <string name="icon_app">Logo</string>
+    <string name="editar_perfil">Modifier le profil</string>
+    <string name="log_out">Se déconnecter</string>
+    <string name="username_placeholder">User name\n</string>
+    <string name="no_chats_message">Vous n\'avez aucune conversation active.</string>
+    <string name="create_new_chat_prompt">Appuyez sur le bouton « + » pour en créer un nouveau.</string>
+    <string name="no_chats_image_description">Illustration indiquant qu\'il n\'y a pas de conversations.</string>
+    <string name="profile_image">Photo de profil</string>
+    <string name="last_message">Il s\'agit du dernier message envoyé ou reçu dans la conversation.</string>
+    <string name="search_icon_description">Rechercher une conversation</string>
+    <string name="menu_icon_description">Plus d\'options de conversation</string>
+    <string name="emoji_icon_description">Ouvrir le sélecteur d\'emojis</string>
+    <string name="attach_icon_description">Joindre un fichier</string>
+    <string name="send_icon">Envoyer un message</string>
+    <string name="voice_icon_description">Envoyer un message vocal</string>
+    <string name="cambiar_foto">CHANGER LA PHOTO</string>
+    <string name="cancelar">ANNULER</string>
+    <string name="guardar">ENREGISTRER</string>
+    <string name="toast_permission_denied_permanently">Autorisation refusée définitivement. Activer dans les Paramètres</string>
+    <string name="toast_permission_denied">Autorisation refusée. Requis pour accéder à la galerie.</string>
+    <string name="toast_no_image_selected">Aucune image sélectionnée.</string>
+    <string name="toast_image_uploaded_success">Image téléchargée.</string>
+    <string name="toast_profile_updated">Profil mis à jour.</string>
+    <string name="toast_update_error">Erreur lors de l\'enregistrement des modifications : %1$s.</string>
+    <string name="toast_username_empty">Le nom d\'utilisateur ne peut pas être vide.</string>
+    <string name="toast_not_authenticated">Erreur : Utilisateur non authentifié.</string>
+    <string name="toast_user_not_found">Erreur : Utilisateur introuvable.</string>
+    <string name="toast_profile_load_error">Erreur lors du téléchargement du profil : %1$s.</string>
+    <string name="toast_image_load_error">Erreur lors du téléchargement de l\'image : %1$s</string>
+    <string name="error_chat_not_initialized">Erreur interne : le chat n\'est pas initialisé.</string>
 </resources>
