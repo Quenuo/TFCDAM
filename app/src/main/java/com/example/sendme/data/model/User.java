@@ -3,33 +3,55 @@ package com.example.sendme.data.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-// Esta clase representa a un usuario y es Parcelable, lo cual permite pasar objetos entre Activities o Fragments
-public class User implements Parcelable {
-    private String phone;      // Número de teléfono del usuario (clave única)
-    private String username;   // Nombre de usuario
-    private String status;     // Estado personalizado (tipo "Disponible", "Ocupado", etc.)
-    private String imageUrl;   // URL de la imagen de perfil
+import java.util.Objects;
 
-    // Constructor vacío necesario para Firebase, serialización, etc.
+/**
+ * Modelo que representa a un usuario en SendMe.
+ *
+ * Contiene toda la información del perfil: UID (clave única de Firebase Auth),
+ * nombre de usuario, estado, foto, teléfono, email...
+ *
+ * Se guarda en Firestore bajo la colección "users", con el UID como ID del documento.
+ *
+ * Implementa Parcelable porque pasamos objetos User entre fragments o activities
+ * (por ejemplo, al abrir un chat 1:1 o ver detalles de un contacto).
+ */
+public class User implements Parcelable {
+
+    private String uid;         // UID de Firebase Authentication (clave única)
+    private String phone;       // Teléfono introducido manualmente
+    private String username;    // Nombre visible en la app
+    private String status;      // Estado o mensaje personal
+    private String imageUrl;    // URL de la foto de perfil (Imgur)
+    private String email;       // Email usado para login
+
+    /** Constructor vacío necesario para Firebase (deserialización) */
     public User() {}
 
-    // Constructor principal que se usa cuando se crean objetos manualmente
-    public User(String phone, String username, String status, String imageUrl) {
+    /**
+     * Constructor completo usado al crear un usuario nuevo.
+     */
+    public User(String uid, String phone, String username, String status, String imageUrl, String email) {
+        this.uid = uid;
         this.phone = phone;
         this.username = username;
         this.status = status;
         this.imageUrl = imageUrl;
+        this.email = email;
     }
 
-    // Constructor que reconstruye el objeto a partir de un Parcel (esto es obligatorio para Parcelable)
+    // === Parcelable boilerplate ===
+    // Permite pasar el objeto entre componentes de Android
+
     protected User(Parcel in) {
+        uid = in.readString();
         phone = in.readString();
         username = in.readString();
         status = in.readString();
         imageUrl = in.readString();
+        email = in.readString();
     }
 
-    // Este objeto CREATOR es necesario para que Android pueda crear instancias de User desde un Parcel
     public static final Creator<User> CREATOR = new Creator<User>() {
         @Override
         public User createFromParcel(Parcel in) {
@@ -42,7 +64,31 @@ public class User implements Parcelable {
         }
     };
 
-    // Getters y setters normales
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(uid);
+        dest.writeString(phone);
+        dest.writeString(username);
+        dest.writeString(status);
+        dest.writeString(imageUrl);
+        dest.writeString(email);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    // === Getters y setters ===
+    // Simples, pero con algún null-check para evitar problemas
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
     public String getPhone() {
         return phone;
@@ -76,18 +122,31 @@ public class User implements Parcelable {
         this.imageUrl = imageUrl;
     }
 
-    // Describe el contenido del objeto, por lo general se deja en 0
-    @Override
-    public int describeContents() {
-        return 0;
+    public String getEmail() {
+        return email;
     }
 
-    // Escribe los datos del objeto en el Parcel en el mismo orden en que luego se leerán
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    /**
+     * Dos usuarios son iguales si tienen el mismo UID.
+     * Útil para comparar en listas o maps.
+     */
     @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(phone);
-        dest.writeString(username);
-        dest.writeString(status);
-        dest.writeString(imageUrl);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(uid, user.uid);
+    }
+
+    /**
+     * Hash basado solo en UID, para que equals y hashCode sean consistentes.
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(uid);
     }
 }

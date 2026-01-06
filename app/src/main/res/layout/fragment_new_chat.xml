@@ -16,17 +16,7 @@
     app:layout_constraintTop_toTopOf="parent"
     android:layout_marginBottom="16dp">
 
-        <ImageButton
-            android:id="@+id/backButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="@string/message_image"
-            android:src="@drawable/icon_arrow_back"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            app:tint="@android:color/white"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+
 
     <TextView
         android:id="@+id/title"
@@ -37,7 +27,7 @@
         android:textStyle="bold"
         android:textColor="@android:color/white"
         android:layout_marginStart="16dp"
-        app:layout_constraintStart_toEndOf="@id/backButton"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />

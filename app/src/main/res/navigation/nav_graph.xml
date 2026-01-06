@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/chatListFragment">
 
@@ -34,6 +35,12 @@
         <action
             android:id="@+id/action_chatListFragment_to_editProfileFragment"
             app:destination="@id/editProfileFragment" />
+        <action
+            android:id="@+id/action_chatListFragment_to_createGroupFragment"
+            app:destination="@id/createGroupFragment" />
+        <action
+            android:id="@+id/action_chatListFragment_to_groupChatFragment"
+            app:destination="@id/groupChatFragment" />
 
     </fragment>
 
@@ -61,7 +68,6 @@
             app:destination="@id/chatListFragment" />
     </fragment>
 
-    <!-- Fragmento de Chat -->
     <fragment
         android:id="@+id/chatFragment"
         android:name="com.example.sendme.view.ChatFragment">
@@ -77,12 +83,27 @@
     </fragment>
 
     <fragment
+        android:id="@+id/groupChatFragment"
+        android:name="com.example.sendme.view.GroupChatFragment"
+        android:label="GroupChatFragment"
+        tools:layout="@layout/fragment_chat">
+        <action
+            android:id="@+id/action_groupChatFragment_to_groupDetailFragment"
+            app:destination="@id/groupDetailFragment" />
+        <action
+            android:id="@+id/action_groupChatFragment_to_imageViewerFragment"
+            app:destination="@id/imageViewerFragment" />
+        <action
+            android:id="@+id/action_groupDetailFragment_to_selectParticipantsFragment"
+            app:destination="@id/selectParticipantsFragment" />
+</fragment>
+
+    <fragment
         android:id="@+id/userDetailFragment"
         android:name="com.example.sendme.view.UserDetailFragment"
 
         />
 
-    <!-- Fragmento de Edición de Perfil -->
     <fragment
         android:id="@+id/editProfileFragment"
         android:name="com.example.sendme.view.EditProfileFragment">
@@ -98,6 +119,34 @@
         <argument
             android:name="imageUrl"
             app:argType="string" />
+    </fragment>
+    <fragment
+        android:id="@+id/createGroupFragment"
+        android:name="com.example.sendme.view.CreateGroupFragment">
+        <action
+            android:id="@+id/action_createGroupFragment_to_selectParticipantsFragment"
+            app:destination="@id/selectParticipantsFragment" />
+        <action
+            android:id="@+id/action_createGroupFragment_to_chatListFragment"
+            app:destination="@id/chatListFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/selectParticipantsFragment"
+        android:name="com.example.sendme.view.SelectParticipantsFragment"
+        tools:layout="@layout/fragment_select_participants">
+        <action
+            android:id="@+id/action_selectParticipantsFragment_to_createGroupFragment"
+            app:destination="@id/createGroupFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/groupDetailFragment"
+        android:name="com.example.sendme.view.GroupDetailFragment"
+        tools:layout="@layout/fragment_group_detail">
+        <action
+            android:id="@+id/action_groupDetailFragment_to_selectParticipantsFragment"
+            app:destination="@id/selectParticipantsFragment" />
+
     </fragment>
 
 </navigation>

@@ -1,10 +1,15 @@
 package com.example.sendme;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
+
+import com.example.sendme.repository.FirebaseManager;
+import com.google.firebase.auth.FirebaseUser;
 
 /**
  * Actividad principal de la aplicación.
@@ -12,25 +17,59 @@ import androidx.navigation.fragment.NavHostFragment;
  */
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "MainActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Establece el layout de la actividad. Este layout contendrá el NavHostFragment.
-        setContentView(R.layout.activity_main);
 
-        // Configura el Navigation Component.
-        // Se obtiene una referencia al NavHostFragment que está definido en el layout de esta actividad.
-        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.nav_host_fragment);
+        FirebaseUser currentUser = FirebaseManager.getInstance().getAuth().getCurrentUser();
 
-        // Verifica que el NavHostFragment no sea nulo antes de intentar obtener el NavController.
-        if (navHostFragment != null) {
-            // Obtiene el NavController asociado con este NavHostFragment.
-            // El NavController es el que se usa para realizar las operaciones de navegación (ej. navegar a otro fragmento).
-            NavController navController = navHostFragment.getNavController();
-            // A partir de aquí, 'navController' estaría listo para ser usado si fuera necesario
-            // para configuraciones adicionales a nivel de actividad, aunque comúnmente la navegación
-            // se maneja dentro de los fragmentos a través de sus propios NavControllers.
+        if (currentUser != null) {
+            // Usuario autenticado
+            Log.d(TAG, "Usuario autenticado:");
+            Log.d(TAG, "UID: " + currentUser.getUid());
+            Log.d(TAG, "Email: " + currentUser.getEmail());
+
+            setContentView(R.layout.activity_main);
+
+            NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.nav_host_fragment);
+
+            if (navHostFragment != null) {
+                NavController navController = navHostFragment.getNavController();
+
+                // === MANEJO DE NOTIFICACIONES: abrir chat directo ===
+                Intent intent = getIntent();
+                if (intent != null && intent.hasExtra("openChatId")) {
+                    String chatId = intent.getStringExtra("openChatId");
+                    boolean isGroup = intent.getBooleanExtra("openIsGroup", false);
+
+                    if (chatId != null) {
+                        Log.d(TAG, "Abriendo chat desde notificación: " + chatId + " (grupo: " + isGroup + ")");
+
+                        Bundle bundle = new Bundle();
+                        bundle.putString("chatId", chatId);
+                        bundle.putBoolean("isGroup", isGroup);
+
+                        // Navega al fragment correcto
+                        int destination = isGroup
+                                ? R.id.groupChatFragment
+                                : R.id.chatFragment;
+
+                        navController.navigate(destination, bundle);
+                    }
+                }
+                // Aquí puedes añadir más configuraciones globales si quieres
+            }
+        } else {
+            // No hay usuario → ir a login
+            Log.d(TAG, "No hay usuario autenticado → redirigiendo a AuthActivity");
+
+            Intent intent = new Intent(this, AuthActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
         }
     }
 }

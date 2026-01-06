@@ -3,6 +3,7 @@ package com.example.sendme.view;
 import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -79,6 +80,12 @@ public class ImageViewFragment extends Fragment {
 
         // Configura el OnClickListener para el botón de cerrar, que navega hacia atrás.
         binding.closeButton.setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                NavHostFragment.findNavController(ImageViewFragment.this).popBackStack();
+            }
+        });
     }
 
     @Override

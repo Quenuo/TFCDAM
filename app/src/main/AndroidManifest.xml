@@ -7,8 +7,8 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
         android:name=".SendMeApplication"
@@ -21,20 +21,40 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SendMe"
         tools:targetApi="31">
+
+        <!-- Servicio FCM para notificaciones -->
+        <service
+            android:name=".service.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".ProfileSetupActivity"
             android:exported="false" />
+
         <activity
             android:name=".MainActivity"
-            android:exported="false" />
-        <activity
-            android:name=".AuthActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait"
+
+
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".AuthActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+
+            />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.example.sendme.fileprovider"
@@ -44,6 +64,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-    </application>
 
+    </application>
 </manifest>

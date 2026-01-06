@@ -17,33 +17,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-    <ImageButton
-        android:id="@+id/backButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:contentDescription="@string/message_image"
-        android:src="@drawable/icon_arrow_back"
-        android:background="?android:attr/selectableItemBackgroundBorderless"
-        app:tint="@android:color/white"
-        android:padding="12dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
 
-    <ImageView
-        android:id="@+id/profileImage"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@drawable/default_profile"
-        android:contentDescription="@string/profile_image"
-        android:scaleType="centerCrop"
-        android:padding="2dp"
-        android:layout_marginStart="8dp"
-        app:layout_constraintStart_toEndOf="@id/backButton"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        <ImageView
+            android:id="@+id/profileImage"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/default_profile"
+            android:contentDescription="@string/profile_image"
+            android:scaleType="centerCrop"
+            android:padding="2dp"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
-    <TextView
+        <TextView
         android:id="@+id/contactName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

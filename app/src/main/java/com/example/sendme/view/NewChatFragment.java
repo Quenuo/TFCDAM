@@ -5,6 +5,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -71,12 +73,10 @@ public class NewChatFragment extends Fragment {
         binding.contactsRecyclerView.setHasFixedSize(true); // Optimización para rendimiento si el tamaño de los elementos no cambia.
 
         // Configura el OnClickListener para la flecha de retorno.
-        binding.backButton.setOnClickListener(v -> {
-            Log.d(TAG, "Volviendo a la lista de chats.");
-            if (navController != null) {
-                navController.navigateUp(); // Simula el comportamiento del botón "atrás".
-            } else {
-                Log.e(TAG, "Nav controller es nulo.");
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                navController.navigateUp(); // o popBackStack()
             }
         });
     }

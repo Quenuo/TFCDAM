@@ -7,26 +7,28 @@
     android:layout_height="match_parent"
     tools:context=".ProfileSetupActivity"
     android:background="@drawable/profile_setup_background"
-    android:padding="24dp">
+    android:padding="32dp">
 
+    <!-- Imagen del Perfil a la izquierda -->
     <ImageView
         android:id="@+id/profileImage"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
         android:contentDescription="@string/profile_image"
         android:src="@drawable/default_profile"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
+    <!-- Username -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/usernameInputLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/profileImage"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/profileImage"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
+        android:layout_marginStart="32dp"
         android:textColorHint="@android:color/white"
         app:hintTextColor="@color/white">
 
@@ -38,14 +40,37 @@
             android:textColor="@android:color/white" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Phone -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/phoneInputLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/usernameInputLayout"
+        app:layout_constraintStart_toStartOf="@id/usernameInputLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="20dp"
+        android:textColorHint="@android:color/white"
+        app:hintTextColor="@color/white">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/phoneEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Número de teléfono (9 dígitos)"
+            android:inputType="phone"
+            android:maxLength="9"
+            android:textColor="@android:color/white" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Status -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/statusInputLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/usernameInputLayout"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/phoneInputLayout"
+        app:layout_constraintStart_toStartOf="@id/usernameInputLayout"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="20dp"
         android:textColorHint="@android:color/white"
         app:hintTextColor="@color/white">
 
@@ -57,15 +82,16 @@
             android:textColor="@android:color/white" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Botón Guardar -->
     <Button
         android:id="@+id/saveButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="@string/save"
         app:layout_constraintTop_toBottomOf="@id/statusInputLayout"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toStartOf="@id/usernameInputLayout"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="28dp"
         android:background="@drawable/button_background"
         android:textColor="@android:color/white"
         android:textSize="18sp"

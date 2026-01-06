@@ -54,7 +54,10 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.okhttp)
     implementation(libs.gson)
+    implementation(libs.circleimageview)
     implementation(libs.activity)
+    implementation(libs.firebase.messaging)
+
 
 
 

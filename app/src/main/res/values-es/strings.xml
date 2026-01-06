@@ -50,6 +50,23 @@
     <string name="toast_profile_load_error">Error al cargar el perfil: %1$s</string>
     <string name="toast_image_load_error">Error al cargar la imagen: %1$s</string>
     <string name="error_chat_not_initialized">Error interno: el chat no está inicializado.</string>
+    <string name="create_group">Crear grupo</string>
+    <string name="nuevo_grupo">Nuevo grupo</string>
+    <string name="imagen_del_grupo">Imagen del grupo</string>
+    <string name="nombre_del_grupo">Nombre del grupo</string>
+    <string name="group_members">Miembros: 0</string>
+    <string name="add_members">Agregar más participantes</string>
+    <string name="confirmar_grupo">Confirmar grupo</string>
+    <string name="participant_image">Imagen del participante</string>
+    <string name="members_count">Miembros: %1$d</string>
+    <string name="enter_group_name">Ingresa un nombre para el grupo</string>
+    <string name="add_at_least_one_participant">Añade al menos un participante</string>
+    <string name="group_created_successfully">Grupo creado exitosamente</string>
+    <string name="cancel_group_creation_title">Cancelar creación de grupo</string>
+    <string name="cancel_group_creation_message">Se ha cancelado exitosamente la creación del grupo</string>
+    <string name="ok">OK</string>
+    <string name="no_group_name_message">Por favor, ingresa un nombre para el grupo.</string>
+    <string name="no_participants_message">Por favor, agrega al menos un participante.</string>
 
 
 

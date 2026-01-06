@@ -1,6 +1,8 @@
 package com.example.sendme.view;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -9,7 +11,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
@@ -25,14 +29,19 @@ import com.example.sendme.data.model.User;
 import com.example.sendme.databinding.FragmentChatListBinding;
 import com.example.sendme.repository.FirebaseManager;
 import com.example.sendme.ui.ChatAdapter;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Fragmento que muestra la lista de chats activos del usuario.
@@ -40,24 +49,37 @@ import java.util.List;
  * y cerrar sesión.
  */
 public class ChatListFragment extends Fragment {
-    // Referencia al binding del layout para acceder a las vistas.
+
     private FragmentChatListBinding binding;
-    // Adaptador para el RecyclerView que muestra la lista de chats.
     private ChatAdapter adapter;
-    // Layout que permite un menú deslizable (drawer).
     private DrawerLayout drawerLayout;
-    // Controlador de navegación para transiciones entre destinos.
     private NavController navController;
-    // Referencia al documento del usuario actual en Firestore.
     private DocumentReference userRef;
-    // Listener de Firestore para observar cambios en el documento del usuario.
     private ListenerRegistration userListener;
-    // Etiqueta para logs de depuración.
+
+    // Listener en tiempo real para user-chats (nuevos chats)
+    private ChildEventListener userChatsListener;
+    private DatabaseReference userChatsRef;
+
+    // Maps para referencias y listeners (para removerlos correctamente al salir de un chat)
+    private Map<String, DatabaseReference> lastMessageRefs = new HashMap<>();
+    private Map<String, ValueEventListener> lastMessageListeners = new HashMap<>();
+    private Map<String, DatabaseReference> timestampRefs = new HashMap<>();
+    private Map<String, ValueEventListener> timestampListeners = new HashMap<>();
+    private Map<String, DatabaseReference> unreadRefs = new HashMap<>();
+    private Map<String, ValueEventListener> unreadListeners = new HashMap<>();
+
+    // UID del usuario actual
+    private String currentUserUid;
+
+    // Listas para chats y usuarios (para 1:1)
+    private List<Chat> chats = new ArrayList<>();
+    private List<User> contactUsers = new ArrayList<>();
+
     private static final String TAG = "ChatListFragment";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        // Infla el layout del fragmento.
         binding = FragmentChatListBinding.inflate(inflater, container, false);
         Log.d(TAG, "onCreateView: binding inflado");
         return binding.getRoot();
@@ -68,46 +90,51 @@ public class ChatListFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         Log.d(TAG, "onViewCreated");
 
-        // Inicializa el NavController, DrawerLayout y el ChatAdapter.
         navController = NavHostFragment.findNavController(this);
         drawerLayout = binding.drawerLayout;
+
         adapter = new ChatAdapter(navController);
 
-        // Configura el RecyclerView con un LinearLayoutManager y asigna el adaptador.
         binding.chatRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.chatRecyclerView.setAdapter(adapter);
 
-        // Configura el botón de acción flotante (FAB) para navegar a NewChatFragment.
+        MaterialToolbar toolbar = binding.toolbar;
+        if (toolbar != null) {
+            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                toolbar.setNavigationIcon(null);
+            } else {
+                toolbar.setNavigationOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
+            }
+        }
+
         binding.fabNewChat.setOnClickListener(v -> {
             Log.d(TAG, "FAB clickeado, navegando a NewChatFragment");
-            // Se verifica que el fragmento esté adjunto antes de navegar.
-            if (isAdded() && navController != null) {
-                navController.navigate(R.id.action_chatListFragment_to_newChatFragment);
-            }
+            navController.navigate(R.id.action_chatListFragment_to_newChatFragment);
         });
 
-        // Obtiene referencias a las vistas dentro del menú deslizable.
-        ImageView profileImageDrawer = binding.profileImageDrawer;
-        TextView logoutButton = binding.logoutButton;
+        binding.fabCreateGroup.setOnClickListener(v -> {
+            Log.d(TAG, "FAB Create Group clicked");
+            navController.navigate(R.id.action_chatListFragment_to_createGroupFragment);
+        });
 
-        // Establece un listener en Firestore para obtener y actualizar la información del usuario en el drawer.
-        String currentPhone = FirebaseManager.getInstance().getAuth().getCurrentUser() != null
-                ? FirebaseManager.getInstance().getAuth().getCurrentUser().getPhoneNumber() : null;
-        if (currentPhone != null) {
-            userRef = FirebaseManager.getInstance().getFirestore().collection("users").document(currentPhone);
+        currentUserUid = FirebaseManager.getInstance().getAuth().getCurrentUser() != null
+                ? FirebaseManager.getInstance().getAuth().getCurrentUser().getUid()
+                : null;
+
+        if (currentUserUid == null) {
+            Log.e(TAG, "Usuario no autenticado");
+            return;
+        }
+
+        // Drawer: foto y nombre
+        if (binding.profileImageDrawer != null && binding.usernameDrawer != null) {
+            userRef = FirebaseManager.getInstance().getFirestore()
+                    .collection("users")
+                    .document(currentUserUid);
+
             userListener = userRef.addSnapshotListener((snapshot, error) -> {
-                if (error != null) {
-                    Log.e(TAG, "Error escuchando datos de usuario: " + error.getMessage());
-                    return;
-                }
+                if (error != null || binding == null || !isAdded()) return;
 
-                // Valida que el fragmento esté adjunto y el binding no sea nulo antes de actualizar la UI.
-                if (binding == null || !isAdded()) {
-                    Log.w(TAG, "El fragmento está desasociado o el binding es nulo, no se puede actualizar el perfil de usuario en el drawer.");
-                    return;
-                }
-
-                // Si el snapshot existe, se mapea a un objeto User y se actualiza la UI del drawer.
                 if (snapshot != null && snapshot.exists()) {
                     User user = snapshot.toObject(User.class);
                     if (user != null) {
@@ -116,229 +143,325 @@ public class ChatListFragment extends Fragment {
                                 .load(imageUrl != null ? imageUrl : R.drawable.default_profile)
                                 .error(R.drawable.default_profile)
                                 .circleCrop()
-                                .into(profileImageDrawer);
-                        if (user.getUsername() != null) {
-                            binding.usernameDrawer.setText(user.getUsername());
-                        }
+                                .into(binding.profileImageDrawer);
+
+                        binding.usernameDrawer.setText(user.getUsername() != null && !user.getUsername().isEmpty()
+                                ? user.getUsername()
+                                : "Usuario");
                     }
                 }
             });
         }
 
-        // Configura el botón de editar perfil en el drawer para navegar a EditProfileFragment.
-        binding.editProfileButton.setOnClickListener(v -> {
-            if (isAdded()) {
-                drawerLayout.closeDrawer(GravityCompat.START); // Cierra el drawer antes de navegar.
-                if (navController != null) {
-                    navController.navigate(R.id.action_chatListFragment_to_editProfileFragment);
-                }
-            }
-        });
+        // Botones drawer
+        if (binding.editProfileButton != null) {
+            binding.editProfileButton.setOnClickListener(v -> {
+                if (drawerLayout != null) drawerLayout.closeDrawer(GravityCompat.START);
+                navController.navigate(R.id.action_chatListFragment_to_editProfileFragment);
+            });
+        }
 
-        // Configura el botón de cerrar sesión para desautenticar al usuario y redirigirlo a AuthActivity.
-        logoutButton.setOnClickListener(v -> {
-            if (isAdded()) {
-                // Elimina el listener de Firestore para evitar actualizaciones después de cerrar sesión.
-                if (userListener != null) {
-                    userListener.remove();
-                    userListener = null;
-                }
-                FirebaseManager.getInstance().getAuth().signOut(); // Cierra la sesión de Firebase.
-                // Inicia AuthActivity y limpia la pila de actividades para que el usuario no pueda volver atrás.
+        if (binding.logoutButton != null) {
+            binding.logoutButton.setOnClickListener(v -> {
+                if (userListener != null) userListener.remove();
+                FirebaseManager.getInstance().getAuth().signOut();
                 Intent intent = new Intent(requireContext(), AuthActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
-                requireActivity().finish(); // Finaliza la actividad actual.
+                requireActivity().finish();
+            });
+        }
+
+        // Listener principal para nuevos chats y remoción
+        userChatsRef = FirebaseManager.getInstance().getDatabase()
+                .getReference("user-chats").child(currentUserUid);
+
+        userChatsListener = userChatsRef.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                String chatId = snapshot.getKey();
+                if (chatId != null && snapshot.getValue(Boolean.class) == true) {
+                    loadChatDetails(chatId);
+                }
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                String chatId = snapshot.getKey();
+                if (chatId != null) {
+                    loadChatDetails(chatId);
+                }
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+                String chatId = snapshot.getKey();
+                if (chatId != null) {
+                    removeChatFromList(chatId);
+                }
+            }
+
+            @Override public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {}
+            @Override public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(TAG, "Error en listener user-chats: " + error.getMessage());
             }
         });
 
-        // Inicia el proceso de carga de usuarios y luego de los chats del usuario.
-        loadUsersAndThenChats();
+        loadInitialChats();
+
+        // Landscape drawer fijo
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            if (drawerLayout != null) {
+                drawerLayout.openDrawer(GravityCompat.START);
+                drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_OPEN, GravityCompat.START);
+            }
+        }
+
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("¿Salir de SendMe?")
+                        .setMessage("¿Estás seguro de que quieres cerrar la aplicación?")
+                        .setPositiveButton("Salir", (dialog, which) -> requireActivity().finish())
+                        .setNegativeButton("Cancelar", null)
+                        .show();
+            }
+        });
     }
 
-    /**
-     * Carga todos los usuarios desde Firestore y luego procede a cargar los chats del usuario actual.
-     */
-    private void loadUsersAndThenChats() {
+    private void loadInitialChats() {
+        userChatsRef.get().addOnSuccessListener(snapshot -> {
+            for (DataSnapshot child : snapshot.getChildren()) {
+                String chatId = child.getKey();
+                if (chatId != null && child.getValue(Boolean.class) == true) {
+                    loadChatDetails(chatId);
+                }
+            }
+        });
+    }
+
+    private void loadChatDetails(String chatId) {
+        DatabaseReference chatRef = FirebaseManager.getInstance().getDatabase().getReference("chats").child(chatId);
+
+        chatRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!isAdded() || binding == null) return;
+
+                Chat chat = snapshot.getValue(Chat.class);
+                if (chat == null) return;
+
+                chat.setId(chatId);
+                if (chat.getParticipants() == null ||
+                        !chat.getParticipants().containsKey(currentUserUid)) {
+
+                    // El usuario ya NO pertenece al grupo
+                    removeChatFromList(chatId);
+                    return;
+                }
+                if (!chat.isGroup()) {
+                    String otherUid = getOtherParticipant(chat.getParticipants(), currentUserUid);
+                    if (otherUid != null) {
+                        loadUserForChat(otherUid, chat);
+                    } else {
+                        addOrUpdateChat(chat, null);
+                    }
+                } else {
+                    addOrUpdateChat(chat, null);
+                }
+
+                // === LISTENERS EN TIEMPO REAL ===
+                DatabaseReference lmRef = chatRef.child("lastMessage");
+                lastMessageRefs.put(chatId, lmRef);
+                ValueEventListener lmListener = new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        String newLast = snapshot.getValue(String.class);
+                        if (newLast != null) updateLastMessage(chatId, newLast);
+                    }
+                    @Override public void onCancelled(@NonNull DatabaseError error) {}
+                };
+                lmRef.addValueEventListener(lmListener);
+                lastMessageListeners.put(chatId, lmListener);
+
+                DatabaseReference tsRef = chatRef.child("lastMessageTimestamp");
+                timestampRefs.put(chatId, tsRef);
+                ValueEventListener tsListener = new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        Long newTs = snapshot.getValue(Long.class);
+                        if (newTs != null) updateTimestamp(chatId, newTs);
+                    }
+                    @Override public void onCancelled(@NonNull DatabaseError error) {}
+                };
+                tsRef.addValueEventListener(tsListener);
+                timestampListeners.put(chatId, tsListener);
+
+                DatabaseReference unreadRef = chatRef.child("unreadCount").child(currentUserUid);
+                unreadRefs.put(chatId, unreadRef);
+                ValueEventListener unreadListener = new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        Integer newUnread = snapshot.getValue(Integer.class);
+                        if (newUnread != null) updateUnread(chatId, newUnread);
+                    }
+                    @Override public void onCancelled(@NonNull DatabaseError error) {}
+                };
+                unreadRef.addValueEventListener(unreadListener);
+                unreadListeners.put(chatId, unreadListener);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(TAG, "Error cargando chat " + chatId + ": " + error.getMessage());
+            }
+        });
+    }
+
+    private void updateLastMessage(String chatId, String newLast) {
+        for (Chat c : chats) {
+            if (c.getId().equals(chatId)) {
+                c.setLastMessage(newLast);
+                addOrUpdateChat(c, null);
+                break;
+            }
+        }
+    }
+
+    private void updateTimestamp(String chatId, long newTs) {
+        for (Chat c : chats) {
+            if (c.getId().equals(chatId)) {
+                c.setLastMessageTimestamp(newTs);
+                addOrUpdateChat(c, null);
+                break;
+            }
+        }
+    }
+
+    private void updateUnread(String chatId, int newUnread) {
+        for (Chat c : chats) {
+            if (c.getId().equals(chatId)) {
+                if (c.getUnreadCount() == null) c.setUnreadCount(new HashMap<>());
+                c.getUnreadCount().put(currentUserUid, newUnread);
+                addOrUpdateChat(c, null);
+                break;
+            }
+        }
+    }
+
+    private void loadUserForChat(String otherUid, Chat chat) {
         FirebaseManager.getInstance().getFirestore()
                 .collection("users")
+                .document(otherUid)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    // Valida que el fragmento esté adjunto y el binding no sea nulo antes de procesar los datos.
-                    if (binding == null || !isAdded()) {
-                        Log.w(TAG, "El fragmento está desasociado o el binding es nulo, no se pueden cargar los usuarios.");
-                        return;
-                    }
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!isAdded() || binding == null) return;
 
-                    List<User> users = new ArrayList<>();
-                    for (var doc : queryDocumentSnapshots) {
-                        users.add(doc.toObject(User.class));
-                    }
-                    Log.d(TAG, "Usuarios cargados: " + users.size());
-                    loadUserChats(users); // Procede a cargar los chats del usuario con la lista de usuarios.
+                    User otherUser = documentSnapshot.toObject(User.class);
+                    addOrUpdateChat(chat, otherUser);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error cargando usuarios: " + e.getMessage());
-                });
+                .addOnFailureListener(e -> addOrUpdateChat(chat, null));
     }
 
-    /**
-     * Carga los IDs de los chats asociados al usuario actual desde Realtime Database.
-     *
-     * @param users Lista de todos los usuarios registrados en el sistema.
-     */
-    private void loadUserChats(List<User> users) {
-        String currentUserPhone = FirebaseManager.getInstance().getAuth().getCurrentUser() != null
-                ? FirebaseManager.getInstance().getAuth().getCurrentUser().getPhoneNumber()
-                : null;
-        if (currentUserPhone == null) {
-            Log.e(TAG, "El teléfono del usuario actual es nulo. ¿Usuario no autenticado?");
-            // Muestra la vista de chat vacío si no hay usuario autenticado.
-            if (binding != null && isAdded()) {
-                binding.emptyChatView.setVisibility(View.VISIBLE);
-                binding.chatRecyclerView.setVisibility(View.GONE);
-            }
-            return;
-        }
-        Log.d(TAG, "Cargando chats para el usuario: " + currentUserPhone);
+    private void addOrUpdateChat(Chat chat, User otherUser) {
+        if (!isAdded() || binding == null) return;
 
-        FirebaseManager.getInstance().getDatabase()
-                .getReference("user-chats")
-                .child(currentUserPhone)
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        // Valida la integridad del fragmento antes de procesar los datos.
-                        if (binding == null || !isAdded()) {
-                            Log.w(TAG, "El fragmento está desasociado o el binding es nulo, no se pueden procesar los datos de chat del usuario.");
-                            return;
-                        }
+        chats.removeIf(c -> c.getId().equals(chat.getId()));
+        chats.add(chat);
 
-                        List<String> chatIds = new ArrayList<>();
-                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                            // Solo añade IDs de chat si el valor es true (indica participación activa).
-                            if (snapshot.getValue(Boolean.class) != null && snapshot.getValue(Boolean.class)) {
-                                chatIds.add(snapshot.getKey());
-                            }
-                        }
-                        Log.d(TAG, "IDs de chat para el usuario cargados: " + chatIds.size());
-                        loadChatDetails(chatIds, users); // Procede a cargar los detalles de cada chat.
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        Log.e(TAG, "Error cargando los chats del usuario: " + databaseError.getMessage());
-                        // Muestra la vista de chat vacío en caso de error.
-                        if (binding != null && isAdded()) {
-                            binding.emptyChatView.setVisibility(View.VISIBLE);
-                            binding.chatRecyclerView.setVisibility(View.GONE);
-                        }
-                    }
-                });
-    }
-
-    /**
-     * Carga los detalles de cada chat individual usando sus IDs y actualiza el RecyclerView.
-     * Gestiona la visibilidad de la vista de "chat vacío".
-     *
-     * @param chatIds Lista de IDs de los chats a cargar.
-     * @param users   Lista de todos los usuarios para resolver información de contacto.
-     */
-    private void loadChatDetails(List<String> chatIds, List<User> users) {
-        // Valida la integridad del fragmento antes de proceder.
-        if (binding == null || !isAdded()) {
-            Log.w(TAG, "El fragmento está desasociado o el binding es nulo, no se pueden cargar los detalles del chat o actualizar la UI.");
-            return;
+        if (otherUser != null) {
+            contactUsers.removeIf(u -> u.getUid() != null && u.getUid().equals(otherUser.getUid()));
+            contactUsers.add(otherUser);
         }
 
-        List<Chat> chats = new ArrayList<>();
-        if (chatIds.isEmpty()) {
-            adapter.setChats(new ArrayList<>(), users);
-            // Muestra la vista de chat vacío si no hay chats.
+        chats.sort((c1, c2) -> Long.compare(c2.getLastMessageTimestamp(), c1.getLastMessageTimestamp()));
+
+        adapter.setChats(chats, contactUsers);
+
+        if (chats.isEmpty()) {
             binding.emptyChatView.setVisibility(View.VISIBLE);
             binding.chatRecyclerView.setVisibility(View.GONE);
-            return;
+        } else {
+            binding.emptyChatView.setVisibility(View.GONE);
+            binding.chatRecyclerView.setVisibility(View.VISIBLE);
         }
-        // Oculta la vista de chat vacío si hay chats.
-        binding.emptyChatView.setVisibility(View.GONE);
-        binding.chatRecyclerView.setVisibility(View.VISIBLE);
+    }
 
-        // Contador para asegurar que todos los detalles de los chats se han procesado antes de actualizar el adaptador.
-        final int[] loadedChatCount = {0};
+    private void removeChatFromList(String chatId) {
+        if (!isAdded() || binding == null) return;
 
-        for (String chatId : chatIds) {
-            FirebaseManager.getInstance().getDatabase()
-                    .getReference("chats")
-                    .child(chatId)
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            // Valida la integridad del fragmento.
-                            if (binding == null || !isAdded()) {
-                                Log.w(TAG, "El fragmento está desasociado o el binding es nulo, no se pueden procesar los detalles del chat individual.");
-                                return;
-                            }
+        // Remover listeners para evitar updates residuales después de salir
+        DatabaseReference lmRef = lastMessageRefs.remove(chatId);
+        ValueEventListener lmListener = lastMessageListeners.remove(chatId);
+        if (lmRef != null && lmListener != null) lmRef.removeEventListener(lmListener);
 
-                            Chat chat = dataSnapshot.getValue(Chat.class);
-                            if (chat != null) {
-                                Log.d(TAG, "Detalles del chat cargados: " + chat.getId());
-                                chats.add(chat);
-                            }
-                            loadedChatCount[0]++; // Incrementa el contador de chats procesados.
+        DatabaseReference tsRef = timestampRefs.remove(chatId);
+        ValueEventListener tsListener = timestampListeners.remove(chatId);
+        if (tsRef != null && tsListener != null) tsRef.removeEventListener(tsListener);
 
-                            // Si todos los chats han sido procesados (cargados o con error), actualiza el adaptador.
-                            if (loadedChatCount[0] == chatIds.size()) {
-                                Log.d(TAG, "Todos (o intentados) los detalles del chat cargados: " + chats.size());
-                                adapter.setChats(chats, users); // Actualiza el adaptador con los chats obtenidos.
-                                // Revisa nuevamente la visibilidad de las vistas si la lista de chats resultó vacía.
-                                if (chats.isEmpty()) {
-                                    binding.emptyChatView.setVisibility(View.VISIBLE);
-                                    binding.chatRecyclerView.setVisibility(View.GONE);
-                                } else {
-                                    binding.emptyChatView.setVisibility(View.GONE);
-                                    binding.chatRecyclerView.setVisibility(View.VISIBLE);
-                                }
-                            }
-                        }
+        DatabaseReference unreadRef = unreadRefs.remove(chatId);
+        ValueEventListener unreadListener = unreadListeners.remove(chatId);
+        if (unreadRef != null && unreadListener != null) unreadRef.removeEventListener(unreadListener);
 
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-                            Log.e(TAG, "Error cargando los detalles del chat para " + chatId + ": " + databaseError.getMessage());
-                            loadedChatCount[0]++; // Incrementa el contador incluso en caso de error.
-                            // Si todos los chats han sido procesados, actualiza el adaptador con los chats disponibles.
-                            if (loadedChatCount[0] == chatIds.size()) {
-                                Log.d(TAG, "Error durante la carga de detalles del chat, actualizando el adaptador con los chats actuales: " + chats.size());
-                                adapter.setChats(chats, users); // Actualizar con los chats que se cargaron con éxito.
-                                if (binding != null && isAdded()) {
-                                    if (chats.isEmpty()) {
-                                        binding.emptyChatView.setVisibility(View.VISIBLE);
-                                        binding.chatRecyclerView.setVisibility(View.GONE);
-                                    } else {
-                                        binding.emptyChatView.setVisibility(View.GONE);
-                                        binding.chatRecyclerView.setVisibility(View.VISIBLE);
-                                    }
-                                }
-                            }
-                        }
-                    });
+        // Remover de la lista local
+        chats.removeIf(c -> c.getId().equals(chatId));
+        adapter.setChats(chats, contactUsers);
+
+        if (chats.isEmpty()) {
+            binding.emptyChatView.setVisibility(View.VISIBLE);
+            binding.chatRecyclerView.setVisibility(View.GONE);
         }
+    }
+
+    private String getOtherParticipant(Map<String, Boolean> participants, String currentUid) {
+        if (participants == null) return null;
+        for (String uid : participants.keySet()) {
+            if (!uid.equals(currentUid)) {
+                return uid;
+            }
+        }
+        return null;
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         Log.d(TAG, "onDestroyView: binding establecido a nulo");
-        // Remueve el listener de Firestore para evitar fugas de memoria y posibles errores.
+
         if (userListener != null) {
             userListener.remove();
-            userListener = null;
         }
-        binding = null; // Libera la referencia al binding para evitar memory leaks.
-    }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "onDestroy");
+        if (userChatsRef != null && userChatsListener != null) {
+            userChatsRef.removeEventListener(userChatsListener);
+        }
+
+        // Limpieza final de listeners residuales
+        for (Map.Entry<String, ValueEventListener> entry : lastMessageListeners.entrySet()) {
+            DatabaseReference ref = lastMessageRefs.get(entry.getKey());
+            if (ref != null) ref.removeEventListener(entry.getValue());
+        }
+        for (Map.Entry<String, ValueEventListener> entry : timestampListeners.entrySet()) {
+            DatabaseReference ref = timestampRefs.get(entry.getKey());
+            if (ref != null) ref.removeEventListener(entry.getValue());
+        }
+        for (Map.Entry<String, ValueEventListener> entry : unreadListeners.entrySet()) {
+            DatabaseReference ref = unreadRefs.get(entry.getKey());
+            if (ref != null) ref.removeEventListener(entry.getValue());
+        }
+
+        lastMessageListeners.clear();
+        timestampListeners.clear();
+        unreadListeners.clear();
+        lastMessageRefs.clear();
+        timestampRefs.clear();
+        unreadRefs.clear();
+
+        if (drawerLayout != null) {
+            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        }
+
+        binding = null;
     }
 }

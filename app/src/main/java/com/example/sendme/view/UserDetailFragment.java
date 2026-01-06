@@ -8,6 +8,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
@@ -62,6 +63,12 @@ public class UserDetailFragment extends Fragment {
         // Configura el OnClickListener para el botón de retroceso.
         ImageButton backButton = binding.backButton;
         backButton.setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                NavHostFragment.findNavController(UserDetailFragment.this).popBackStack();
+            }
+        });
 
         // Si el objeto 'user' no es nulo, se cargan sus datos en las vistas correspondientes.
         if (user != null) {

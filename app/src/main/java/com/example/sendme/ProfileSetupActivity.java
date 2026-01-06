@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -87,14 +88,46 @@ public class ProfileSetupActivity extends AppCompatActivity {
         binding.saveButton.setOnClickListener(v -> {
             String username = binding.usernameEditText.getText().toString().trim();
             String status = binding.statusEditText.getText().toString().trim();
+            String phone = binding.phoneEditText.getText().toString().trim();
 
+            // Validaciones básicas
             if (username.isEmpty()) {
-                binding.usernameInputLayout.setError(getString(R.string.error_username_empty));
-            } else {
-                binding.usernameInputLayout.setError(null);
-                // Guarda el perfil usando el ViewModel. Si el estado está vacío, usa un mensaje por defecto.
-                viewModel.saveProfile(username, status.isEmpty() ? getString(R.string.status_msg) : status, imageURL);
+                binding.usernameInputLayout.setError("El nombre es obligatorio");
+                return;
             }
+
+            if (phone.isEmpty()) {
+                binding.phoneInputLayout.setError("El teléfono es obligatorio");
+                return;
+            }
+
+            if (!phone.matches("\\d{9}")) {
+                binding.phoneInputLayout.setError("Debe tener exactamente 9 dígitos numéricos");
+                return;
+            }
+
+            // Limpiar errores
+            binding.usernameInputLayout.setError(null);
+            binding.phoneInputLayout.setError(null);
+
+            // Comprobar si el teléfono ya está en uso
+            FirebaseManager.getInstance().getFirestore()
+                    .collection("users")
+                    .whereEqualTo("phone", phone)
+                    .get()
+                    .addOnSuccessListener(querySnapshot -> {
+                        if (!querySnapshot.isEmpty()) {
+                            // Teléfono ya existe
+                            binding.phoneInputLayout.setError("Este número ya está registrado");
+                            Toast.makeText(this, "El número de teléfono ya está en uso", Toast.LENGTH_LONG).show();
+                        } else {
+                            // Teléfono único → guardar perfil
+                            viewModel.saveProfile(username, status.isEmpty() ? getString(R.string.status_msg) : status, imageURL, phone);
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error al verificar el número: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    });
         });
 
         // Observa el estado de 'profileSaved' desde el ViewModel.
@@ -112,6 +145,22 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 new AlertDialog.Builder(this)
                         .setMessage(error)
                         .setPositiveButton(android.R.string.ok, null)
+                        .show();
+            }
+        });
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Mostrar diálogo de confirmación
+                new AlertDialog.Builder(ProfileSetupActivity.this)
+                        .setTitle("¿Cancelar registro?")
+                        .setMessage("Si sales ahora, perderás los datos introducidos y tendrás que empezar de nuevo.")                        .setPositiveButton("Salir", (dialog, which) -> {
+                            // Cerrar sesión y volver a AuthActivity
+                            FirebaseManager.getInstance().getAuth().signOut();
+                            startActivity(new Intent(ProfileSetupActivity.this, AuthActivity.class));
+                            finish();
+                        })
+                        .setNegativeButton("Cancelar", null)
                         .show();
             }
         });
