@@ -1,16 +1,23 @@
 package com.example.sendme.view;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -18,6 +25,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
@@ -63,6 +72,11 @@ public class GroupChatFragment extends Fragment {
     private static final String TAG = "GroupChatFragment";
     private NavController navController;
 
+    private List<Message> allMessages = new ArrayList<>(); // Lista completa para búsqueda
+    private String currentSearchQuery = "";
+
+    private AlertDialog searchDialog; // ← Dialog para búsqueda
+
     private final ActivityResultLauncher<String> pickImageLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -81,7 +95,8 @@ public class GroupChatFragment extends Fragment {
             });
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @NonNull ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @NonNull ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         binding = FragmentChatBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -118,19 +133,95 @@ public class GroupChatFragment extends Fragment {
         // Verificar membresía antes de cargar nada
         checkMembershipAndLoad();
 
+        // Manejo del botón atrás del sistema (cierra dialog de búsqueda si está abierto)
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                navController.popBackStack(R.id.chatListFragment, false);
+                if (searchDialog != null && searchDialog.isShowing()) {
+                    searchDialog.dismiss();
+                } else {
+                    navController.popBackStack(R.id.chatListFragment, false);
+                }
             }
         });
+
+        binding.messageInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                if (s.length() > 0) {
+                    binding.emojiIcon.setVisibility(View.GONE);
+                    binding.attachIcon.setVisibility(View.GONE);
+                    binding.sendIcon.setVisibility(View.VISIBLE);
+                } else {
+                    binding.emojiIcon.setVisibility(View.VISIBLE);
+                    binding.attachIcon.setVisibility(View.VISIBLE);
+                    binding.sendIcon.setVisibility(View.GONE);
+                }
+            }
+        });
+
+        // Al pulsar el emoji: abrir el teclado (forzado para que siempre se muestre)
+        binding.emojiIcon.setOnClickListener(v -> {
+            binding.messageInput.requestFocus();
+            InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(binding.messageInput, InputMethodManager.SHOW_FORCED);
+        });
+
+        // Click en la lupa → abrir mini ventana (dialog) de búsqueda
+        binding.searchIcon.setOnClickListener(v -> showSearchDialog());
     }
 
-    /**
-     * Verifica si el usuario sigue siendo miembro del grupo.
-     * Si no lo es, muestra un mensaje y vuelve a la lista de chats.
-     * Si sí, carga todo lo necesario.
-     */
+    private void showSearchDialog() {
+        if (searchDialog != null && searchDialog.isShowing()) {
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        final EditText input = new EditText(requireContext());
+        input.setHint("Introduce un texto para buscar mensajes");
+        input.setPadding(48, 48, 48, 32);
+        input.setTextSize(16);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+
+        builder.setView(input);
+        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.dismiss());
+
+        searchDialog = builder.create();
+
+        // Filtrado y resaltado en tiempo real
+        input.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                String query = s.toString().trim().toLowerCase();
+                currentSearchQuery = query;
+                performSearch(query);
+                if (adapter != null) {
+                    adapter.setSearchQuery(query);
+                }
+            }
+        });
+
+        // Al cerrar el dialog
+        searchDialog.setOnDismissListener(dialog -> {
+            currentSearchQuery = "";
+            performSearch("");
+            if (adapter != null) {
+                adapter.setSearchQuery("");
+            }
+            searchDialog = null;
+        });
+
+        searchDialog.show();
+
+        // Abrir teclado automáticamente
+        input.requestFocus();
+        InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT);
+    }
+
+    /** Verifica si el usuario sigue siendo miembro del grupo... */
     private void checkMembershipAndLoad() {
         DatabaseReference participantsRef = FirebaseManager.getInstance().getDatabase()
                 .getReference("chats").child(groupId).child("participants");
@@ -141,6 +232,7 @@ public class GroupChatFragment extends Fragment {
                 if (!isAdded()) return;
 
                 Map<String, Boolean> participants = snapshot.getValue(new GenericTypeIndicator<Map<String, Boolean>>() {});
+
                 if (participants == null || !participants.containsKey(currentUserUid)) {
                     Toast.makeText(requireContext(), "Ya no eres miembro de este grupo", Toast.LENGTH_LONG).show();
                     navController.popBackStack(R.id.chatListFragment, false);
@@ -152,10 +244,10 @@ public class GroupChatFragment extends Fragment {
                 setupRecyclerView();
                 setupEvents();
 
-                // Cargar participantes y adapter (aquí se crea adapter)
+                // Cargar participantes y adapter
                 loadParticipantsAndSetupAdapter();
 
-                // Mensajes (después de adapter)
+                // Mensajes (se cargan dentro de loadParticipantsAndSetupAdapter)
                 messagesRef = FirebaseManager.getInstance().getDatabase()
                         .getReference("chats").child(groupId).child("messages");
 
@@ -179,7 +271,6 @@ public class GroupChatFragment extends Fragment {
         @Override
         public void onDataChange(@NonNull DataSnapshot snapshot) {
             if (!isAdded()) return;
-
             Map<String, Boolean> participants = snapshot.getValue(new GenericTypeIndicator<Map<String, Boolean>>() {});
             if (participants == null || !participants.containsKey(currentUserUid)) {
                 Toast.makeText(requireContext(), "Has sido eliminado del grupo", Toast.LENGTH_LONG).show();
@@ -204,7 +295,6 @@ public class GroupChatFragment extends Fragment {
         } else {
             DatabaseReference chatRef = FirebaseManager.getInstance().getDatabase()
                     .getReference("chats").child(groupId);
-
             chatRef.child("groupIcon").addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -281,23 +371,13 @@ public class GroupChatFragment extends Fragment {
                                 uidToNameMap.put(participantUid, name);
 
                                 if (loadedCount.incrementAndGet() == total) {
-                                    // Crear adapter aquí
-                                    adapter = new MessageAdapter(currentUserUid, navController, uidToNameMap);
-                                    binding.messagesRecyclerView.setAdapter(adapter);
-
-                                    // Ahora sí, cargar mensajes (adapter ya existe)
-                                    loadAllMessages();
-                                    listenForMessages();
+                                    finalizeAdapterAndLoadMessages(uidToNameMap);
                                 }
                             })
                             .addOnFailureListener(e -> {
                                 uidToNameMap.put(participantUid, "Usuario");
                                 if (loadedCount.incrementAndGet() == total) {
-                                    adapter = new MessageAdapter(currentUserUid, navController, uidToNameMap);
-                                    binding.messagesRecyclerView.setAdapter(adapter);
-
-                                    loadAllMessages();
-                                    listenForMessages();
+                                    finalizeAdapterAndLoadMessages(uidToNameMap);
                                 }
                             });
                 }
@@ -310,12 +390,19 @@ public class GroupChatFragment extends Fragment {
         });
     }
 
-    private void openGallery() {
-        String permission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                ? Manifest.permission.READ_MEDIA_IMAGES
-                : Manifest.permission.READ_EXTERNAL_STORAGE;
+    private void finalizeAdapterAndLoadMessages(Map<String, String> uidToNameMap) {
+        adapter = new MessageAdapter(currentUserUid, navController, uidToNameMap);
+        binding.messagesRecyclerView.setAdapter(adapter);
 
-        if (ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) {
+        loadAllMessages();
+        listenForMessages();
+    }
+
+    private void openGallery() {
+        String permission = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU
+                ? android.Manifest.permission.READ_MEDIA_IMAGES : android.Manifest.permission.READ_EXTERNAL_STORAGE;
+
+        if (androidx.core.content.ContextCompat.checkSelfPermission(requireContext(), permission) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
             pickImageLauncher.launch("image/*");
         } else {
             requestPermissionLauncher.launch(permission);
@@ -330,9 +417,12 @@ public class GroupChatFragment extends Fragment {
         message.setId(messageId);
 
         if (messageId != null && isAdded()) {
-            adapter.addMessage(message);
-            displayedMessageIds.add(messageId);
-            binding.messagesRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
+            allMessages.add(message);
+            if (adapter != null) {
+                adapter.addMessage(message);
+                displayedMessageIds.add(messageId);
+                binding.messagesRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
+            }
         }
 
         messagesRef.child(messageId).setValue(message)
@@ -405,16 +495,23 @@ public class GroupChatFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!isAdded()) return;
 
-                List<Message> messages = new ArrayList<>();
+                allMessages.clear();
+                displayedMessageIds.clear();
+
                 for (DataSnapshot snap : snapshot.getChildren()) {
                     Message msg = snap.getValue(Message.class);
-                    if (msg != null && msg.getId() != null) {
-                        messages.add(msg);
-                        displayedMessageIds.add(msg.getId());
+                    if (msg != null) {
+                        String msgId = snap.getKey();
+                        if (msg.getId() == null) msg.setId(msgId);
+                        allMessages.add(msg);
+                        displayedMessageIds.add(msgId);
                     }
                 }
-                adapter.setMessages(messages);
-                binding.messagesRecyclerView.scrollToPosition(messages.size() - 1);
+
+                if (adapter != null) {
+                    adapter.setMessages(new ArrayList<>(allMessages));
+                    binding.messagesRecyclerView.scrollToPosition(allMessages.size() - 1);
+                }
             }
 
             @Override
@@ -432,13 +529,26 @@ public class GroupChatFragment extends Fragment {
             public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
                 if (!isAdded()) return;
 
-                Message msg = snapshot.getValue(Message.class);
-                if (msg != null && msg.getId() != null && !displayedMessageIds.contains(msg.getId())) {
-                    if (!msg.getSender().equals(currentUserUid)) {
-                        resetUnreadCount();
-                    }
-                    adapter.addMessage(msg);
-                    displayedMessageIds.add(msg.getId());
+                Message message = snapshot.getValue(Message.class);
+                if (message == null) return;
+
+                String messageId = snapshot.getKey();
+                if (message.getId() == null) message.setId(messageId);
+
+                if (displayedMessageIds.contains(messageId)) return;
+
+                allMessages.add(message);
+                displayedMessageIds.add(messageId);
+
+                if (!message.getSender().equals(currentUserUid)) {
+                    resetUnreadCount();
+                }
+
+                boolean matches = currentSearchQuery.isEmpty() ||
+                        (message.getContent() != null && message.getContent().toLowerCase().contains(currentSearchQuery));
+
+                if (matches && adapter != null) {
+                    adapter.addMessage(message);
                     binding.messagesRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
                 }
             }
@@ -455,37 +565,67 @@ public class GroupChatFragment extends Fragment {
     }
 
     private void uploadImageToImgur(Uri imageUri) {
-        ImgurApiClient.getInstance().uploadImage(imageUri, requireContext().getContentResolver(),
-                new ImgurApiClient.UploadCallback() {
-                    @Override
-                    public void onSuccess(String imageUrl) {
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            Toast.makeText(requireContext(), "Imagen subida", Toast.LENGTH_SHORT).show();
-                            sendMessage(null, imageUrl);
-                        });
-                    }
-
-                    @Override
-                    public void onFailure(String error) {
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            Toast.makeText(requireContext(), "Error al subir imagen: " + error, Toast.LENGTH_LONG).show();
-                        });
-                    }
+        ImgurApiClient.getInstance().uploadImage(imageUri, requireContext().getContentResolver(), new ImgurApiClient.UploadCallback() {
+            @Override
+            public void onSuccess(String imageUrl) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(requireContext(), "Imagen subida", Toast.LENGTH_SHORT).show();
+                    sendMessage(null, imageUrl);
                 });
+            }
+
+            @Override
+            public void onFailure(String error) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(requireContext(), "Error al subir imagen: " + error, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void performSearch(String query) {
+        if (adapter == null) return;
+
+        List<Message> filtered = new ArrayList<>();
+
+        if (query.isEmpty()) {
+            filtered.addAll(allMessages);
+        } else {
+            for (Message msg : allMessages) {
+                String content = msg.getContent();
+                if (content != null && content.toLowerCase().contains(query)) {
+                    filtered.add(msg);
+                }
+            }
+        }
+
+        adapter.setMessages(filtered);
+        adapter.setSearchQuery(query);
+
+        if (filtered.isEmpty()) {
+            binding.messagesRecyclerView.scrollToPosition(0);
+        } else {
+            binding.messagesRecyclerView.scrollToPosition(filtered.size() - 1);
+        }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
         if (messagesRef != null && messageListener != null) {
             messagesRef.removeEventListener(messageListener);
         }
 
         // Remover listener de membresía
-        DatabaseReference participantsRef = FirebaseManager.getInstance().getDatabase()
-                .getReference("chats").child(groupId).child("participants");
-        participantsRef.removeEventListener(membershipListener);
+        if (groupId != null) {
+            DatabaseReference participantsRef = FirebaseManager.getInstance().getDatabase()
+                    .getReference("chats").child(groupId).child("participants");
+            participantsRef.removeEventListener(membershipListener);
+        }
 
+        allMessages.clear();
+        displayedMessageIds.clear();
         binding = null;
     }
 }

@@ -1,16 +1,23 @@
 package com.example.sendme.view;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -18,6 +25,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
@@ -65,17 +74,20 @@ public class ChatFragment extends Fragment {
     private ActivityResultLauncher<String> requestPermissionLauncher;
     private ActivityResultLauncher<String> pickImageLauncher;
     private NavController navController;
+    private List<Message> allMessages = new ArrayList<>(); // Lista completa
+    private String currentSearchQuery = "";
+
+    private AlertDialog searchDialog; // ← Dialog para búsqueda
 
     public ChatFragment() {}
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         navController = NavHostFragment.findNavController(this);
 
         if (getArguments() != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                 otherUser = getArguments().getParcelable("user", User.class);
             } else {
                 otherUser = getArguments().getParcelable("user");
@@ -90,21 +102,17 @@ public class ChatFragment extends Fragment {
             if (isAdded()) navController.popBackStack();
             return;
         }
-
         if (!isGroup && otherUser == null) {
             Log.e(TAG, "otherUser nulo en chat 1:1");
             if (isAdded()) navController.popBackStack();
             return;
         }
-
         if (isGroup && (groupName == null || groupName.isEmpty())) {
             groupName = "Grupo";
         }
 
         currentUserUid = FirebaseManager.getInstance().getAuth().getCurrentUser() != null
-                ? FirebaseManager.getInstance().getAuth().getCurrentUser().getUid()
-                : null;
-
+                ? FirebaseManager.getInstance().getAuth().getCurrentUser().getUid() : null;
         if (currentUserUid == null) {
             Log.e(TAG, "UID del usuario actual es null");
             if (isAdded()) navController.popBackStack();
@@ -132,7 +140,7 @@ public class ChatFragment extends Fragment {
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
         if (chatId == null || currentUserUid == null) {
@@ -140,17 +148,21 @@ public class ChatFragment extends Fragment {
             return;
         }
 
+        // Manejo del botón atrás del sistema (cierra dialog de búsqueda si está abierto)
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                navController.popBackStack(R.id.chatListFragment, false);
+                if (searchDialog != null && searchDialog.isShowing()) {
+                    searchDialog.dismiss();
+                } else {
+                    navController.popBackStack(R.id.chatListFragment, false);
+                }
             }
         });
 
         // Header para chat 1:1
         if (!isGroup && otherUser != null) {
             binding.contactName.setText(otherUser.getUsername());
-
             String imageUrl = otherUser.getImageUrl();
             Glide.with(this)
                     .load(imageUrl != null && !imageUrl.isEmpty() ? Uri.parse(imageUrl) : R.drawable.default_profile)
@@ -187,6 +199,81 @@ public class ChatFragment extends Fragment {
         });
 
         binding.attachIcon.setOnClickListener(v -> openGallery());
+
+        binding.messageInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                if (s.length() > 0) {
+                    binding.emojiIcon.setVisibility(View.GONE);
+                    binding.attachIcon.setVisibility(View.GONE);
+                    binding.sendIcon.setVisibility(View.VISIBLE);
+                } else {
+                    binding.emojiIcon.setVisibility(View.VISIBLE);
+                    binding.attachIcon.setVisibility(View.VISIBLE);
+                    binding.sendIcon.setVisibility(View.GONE);
+                }
+            }
+        });
+
+        // Al pulsar el emoji: abrir el teclado (forzado para que siempre se muestre)
+        binding.emojiIcon.setOnClickListener(v -> {
+            binding.messageInput.requestFocus();
+            InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(binding.messageInput, InputMethodManager.SHOW_FORCED);
+        });
+
+        // Click en la lupa → abrir mini ventana (dialog) de búsqueda
+        binding.searchIcon.setOnClickListener(v -> showSearchDialog());
+    }
+
+    private void showSearchDialog() {
+        if (searchDialog != null && searchDialog.isShowing()) {
+            return; // Ya está abierto
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        final EditText input = new EditText(requireContext());
+        input.setHint("Introduce un texto para buscar mensajes");
+        input.setPadding(48, 48, 48, 32);
+        input.setTextSize(16);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+
+        builder.setView(input);
+        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.dismiss());
+
+        searchDialog = builder.create();
+
+        // Filtrado y resaltado en tiempo real
+        input.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                String query = s.toString().trim().toLowerCase();
+                currentSearchQuery = query;
+                performSearch(query);
+                if (adapter != null) {
+                    adapter.setSearchQuery(query);
+                }
+            }
+        });
+
+        // Al cerrar el dialog
+        searchDialog.setOnDismissListener(dialog -> {
+            currentSearchQuery = "";
+            performSearch("");
+            if (adapter != null) {
+                adapter.setSearchQuery("");
+            }
+            searchDialog = null;
+        });
+
+        searchDialog.show();
+
+        // Abrir teclado automáticamente
+        input.requestFocus();
+        InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT);
     }
 
     private void sendMessage(String content, String imageUrl) {
@@ -197,6 +284,7 @@ public class ChatFragment extends Fragment {
         message.setId(messageId);
 
         if (messageId != null && isAdded()) {
+            allMessages.add(message);
             adapter.addMessage(message);
             displayedMessageIds.add(messageId);
             binding.messagesRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
@@ -235,7 +323,6 @@ public class ChatFragment extends Fragment {
             updates.put("unreadCount/" + otherUid, ServerValue.increment(1));
             updates.put("unreadCount/" + currentUserUid, 0);
         }
-
         chatRef.updateChildren(updates);
     }
 
@@ -247,16 +334,21 @@ public class ChatFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!isAdded()) return;
 
-                List<Message> messages = new ArrayList<>();
+                allMessages.clear();
+                displayedMessageIds.clear();
+
                 for (DataSnapshot snap : snapshot.getChildren()) {
                     Message msg = snap.getValue(Message.class);
-                    if (msg != null && msg.getId() != null) {
-                        messages.add(msg);
-                        displayedMessageIds.add(msg.getId());
+                    if (msg != null) {
+                        String msgId = snap.getKey();
+                        if (msg.getId() == null) msg.setId(msgId);
+                        allMessages.add(msg);
+                        displayedMessageIds.add(msgId);
                     }
                 }
-                adapter.setMessages(messages);
-                binding.messagesRecyclerView.scrollToPosition(messages.size() - 1);
+
+                adapter.setMessages(new ArrayList<>(allMessages));
+                binding.messagesRecyclerView.scrollToPosition(allMessages.size() - 1);
             }
 
             @Override
@@ -275,12 +367,25 @@ public class ChatFragment extends Fragment {
                 if (!isAdded()) return;
 
                 Message message = snapshot.getValue(Message.class);
-                if (message != null && message.getId() != null && !displayedMessageIds.contains(message.getId())) {
-                    if (!message.getSender().equals(currentUserUid)) {
-                        resetUnreadCount();
-                    }
+                if (message == null) return;
+
+                String messageId = snapshot.getKey();
+                if (message.getId() == null) message.setId(messageId);
+
+                if (displayedMessageIds.contains(messageId)) return;
+
+                allMessages.add(message);
+                displayedMessageIds.add(messageId);
+
+                if (!message.getSender().equals(currentUserUid)) {
+                    resetUnreadCount();
+                }
+
+                boolean matches = currentSearchQuery.isEmpty() ||
+                        (message.getContent() != null && message.getContent().toLowerCase().contains(currentSearchQuery));
+
+                if (matches) {
                     adapter.addMessage(message);
-                    displayedMessageIds.add(message.getId());
                     binding.messagesRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
                 }
             }
@@ -297,11 +402,10 @@ public class ChatFragment extends Fragment {
     }
 
     private void openGallery() {
-        String permission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                ? Manifest.permission.READ_MEDIA_IMAGES
-                : Manifest.permission.READ_EXTERNAL_STORAGE;
+        String permission = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU
+                ? android.Manifest.permission.READ_MEDIA_IMAGES : android.Manifest.permission.READ_EXTERNAL_STORAGE;
 
-        if (ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) {
+        if (android.content.pm.PackageManager.PERMISSION_GRANTED == androidx.core.content.ContextCompat.checkSelfPermission(requireContext(), permission)) {
             pickImageLauncher.launch("image/*");
         } else {
             requestPermissionLauncher.launch(permission);
@@ -313,23 +417,46 @@ public class ChatFragment extends Fragment {
     }
 
     private void uploadImageToImgur(Uri imageUri) {
-        ImgurApiClient.getInstance().uploadImage(imageUri, requireContext().getContentResolver(),
-                new ImgurApiClient.UploadCallback() {
-                    @Override
-                    public void onSuccess(String imageUrl) {
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            Toast.makeText(requireContext(), "Imagen subida", Toast.LENGTH_SHORT).show();
-                            sendMessage(null, imageUrl);
-                        });
-                    }
-
-                    @Override
-                    public void onFailure(String error) {
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            Toast.makeText(requireContext(), "Error al subir imagen: " + error, Toast.LENGTH_LONG).show();
-                        });
-                    }
+        ImgurApiClient.getInstance().uploadImage(imageUri, requireContext().getContentResolver(), new ImgurApiClient.UploadCallback() {
+            @Override
+            public void onSuccess(String imageUrl) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(requireContext(), "Imagen subida", Toast.LENGTH_SHORT).show();
+                    sendMessage(null, imageUrl);
                 });
+            }
+
+            @Override
+            public void onFailure(String error) {
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(requireContext(), "Error al subir imagen: " + error, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void performSearch(String query) {
+        List<Message> filtered = new ArrayList<>();
+
+        if (query.isEmpty()) {
+            filtered.addAll(allMessages);
+        } else {
+            for (Message msg : allMessages) {
+                String content = msg.getContent();
+                if (content != null && content.toLowerCase().contains(query)) {
+                    filtered.add(msg);
+                }
+            }
+        }
+
+        adapter.setMessages(filtered);
+        adapter.setSearchQuery(query);
+
+        if (filtered.isEmpty()) {
+            binding.messagesRecyclerView.scrollToPosition(0);
+        } else {
+            binding.messagesRecyclerView.scrollToPosition(filtered.size() - 1);
+        }
     }
 
     @Override
@@ -340,5 +467,6 @@ public class ChatFragment extends Fragment {
         }
         binding = null;
         displayedMessageIds.clear();
+        allMessages.clear();
     }
 }

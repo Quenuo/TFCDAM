@@ -87,11 +87,8 @@ public class SelectParticipantAdapter extends RecyclerView.Adapter<SelectPartici
             String username = user.getUsername();
             binding.participantName.setText(username != null && !username.isEmpty() ? username : "Usuario");
 
-            // Estado del checkbox
+            // Estado de selección (solo fondo, ya no hay checkbox)
             boolean isSelected = selectedUserUids.contains(userUid);
-            binding.participantCheckbox.setChecked(isSelected);
-
-            // Fondo según selección
             int backgroundColor = isSelected
                     ? ContextCompat.getColor(binding.getRoot().getContext(), R.color.light_green)
                     : ContextCompat.getColor(binding.getRoot().getContext(), R.color.white);
@@ -103,7 +100,7 @@ public class SelectParticipantAdapter extends RecyclerView.Adapter<SelectPartici
                 if (listener != null) {
                     listener.onUserSelected(userUid);
                 }
-                // Actualizar visualmente este item
+                // Actualizar visualmente este item (cambia el fondo)
                 notifyItemChanged(getAdapterPosition());
             });
         }

@@ -4,9 +4,14 @@ package com.example.sendme.ui;
 import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -37,11 +42,13 @@ import java.util.Map;
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
 
     private List<Message> messages = new ArrayList<>();
-    private String currentUserUid; // ← UID del usuario actual (email auth)
+    private String currentUserUid; // ← UID del usuario actual
     private static final String TAG = "MessageAdapter";
     private NavController navController;
     private final boolean isGroupChat;
     private final Map<String, String> uidToNameMap; // ← Map UID → Nombre (para grupos)
+
+    private static String searchQuery = ""; // ← Query de búsqueda actual (para resaltar)
 
     // Constructor para chats individuales
     public MessageAdapter(String currentUserUid, NavController navController) {
@@ -69,8 +76,6 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     @Override
     public void onBindViewHolder(@NonNull MessageViewHolder holder, int position) {
         Message message = messages.get(position);
-
-        // ← Determinar si el mensaje es mío usando UID
         boolean isSentByCurrentUser = currentUserUid != null && currentUserUid.equals(message.getSender());
 
         String senderName = null;
@@ -101,6 +106,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         Log.d(TAG, "Mensajes establecidos en adapter: " + this.messages.size());
     }
 
+    /** Nuevo método: establece la query de búsqueda y fuerza re-bind para resaltar */
+    public void setSearchQuery(String query) {
+        this.searchQuery = (query == null || query.trim().isEmpty()) ? "" : query.toLowerCase().trim();
+        notifyDataSetChanged();
+    }
+
     static class MessageViewHolder extends RecyclerView.ViewHolder {
 
         private final ItemMessageBinding binding;
@@ -123,9 +134,31 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
                 binding.senderNameText.setVisibility(View.GONE);
             }
 
-            // Texto del mensaje
+            // Texto del mensaje + resaltado si hay búsqueda activa
             if (message.getContent() != null && !message.getContent().isEmpty()) {
-                binding.messageText.setText(message.getContent());
+                String content = message.getContent();
+
+                if (!searchQuery.isEmpty()) {
+                    SpannableString spannable = new SpannableString(content);
+                    String lowerContent = content.toLowerCase();
+                    int index = lowerContent.indexOf(searchQuery);
+
+                    while (index >= 0) {
+                        // Fondo amarillo claro
+                        spannable.setSpan(new BackgroundColorSpan(Color.parseColor("#FFFF88")),
+                                index, index + searchQuery.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        // Texto negro para buena legibilidad
+                        spannable.setSpan(new ForegroundColorSpan(Color.BLACK),
+                                index, index + searchQuery.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                        index = lowerContent.indexOf(searchQuery, index + searchQuery.length());
+                    }
+
+                    binding.messageText.setText(spannable);
+                } else {
+                    binding.messageText.setText(content);
+                }
+
                 binding.messageText.setVisibility(View.VISIBLE);
             } else {
                 binding.messageText.setVisibility(View.GONE);
@@ -161,6 +194,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             if (isSentByCurrentUser) {
                 binding.messageBubble.setBackgroundResource(R.drawable.message_bubble_sent);
                 binding.getRoot().setGravity(Gravity.END);
+
                 ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) binding.messageBubble.getLayoutParams();
                 params.leftMargin = dpToPx(64);
                 params.rightMargin = dpToPx(12);
@@ -168,6 +202,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
             } else {
                 binding.messageBubble.setBackgroundResource(R.drawable.message_bubble_received);
                 binding.getRoot().setGravity(Gravity.START);
+
                 ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) binding.messageBubble.getLayoutParams();
                 params.leftMargin = dpToPx(12);
                 params.rightMargin = dpToPx(64);

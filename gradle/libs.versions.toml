@@ -1,6 +1,7 @@
 [versions]
 agp = "8.13.0"
 circleimageview = "3.1.0"
+emojiMaterial = "0.23.0"
 firebaseBom = "33.14.0"
 firebaseDatabase = "21.0.0"
 firebaseFunctions = "22.1.0"
@@ -20,6 +21,7 @@ playServicesAuth = "21.3.0"
 
 [libraries]
 circleimageview = { module = "de.hdodenhof:circleimageview", version.ref = "circleimageview" }
+emoji-material = { module = "com.vanniktech:emoji-material", version.ref = "emojiMaterial" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-database = { module = "com.google.firebase:firebase-database", version.ref = "firebaseDatabase" }
